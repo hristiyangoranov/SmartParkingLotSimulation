@@ -10,8 +10,6 @@ public class ParkingLot {
     private final int capacity = 2;
     private List<EntryGate> entryGates;
     private List<ExitGate> exitGates;
-    private BlockingQueue<Car> waitingToEnter;
-    private BlockingQueue<Car> waitingToLeave;
     private ConcurrentHashMap<String, Ticket> tickets;
     private ConcurrentHashMap<Integer, String> takenSpots;
     private Semaphore s;
@@ -20,9 +18,7 @@ public class ParkingLot {
     private AtomicInteger finesIssued = new AtomicInteger(0);
     private AtomicInteger carsServed = new AtomicInteger(0);
 
-    public ParkingLot(BlockingQueue<Car> waitingToEnter, BlockingQueue<Car> waitingToLeave){
-        this.waitingToEnter = waitingToEnter;
-        this.waitingToLeave = waitingToLeave;
+    public ParkingLot(){
         this.entryGates = new ArrayList<>();
         this.exitGates = new ArrayList<>();
         this.tickets = new ConcurrentHashMap<>();

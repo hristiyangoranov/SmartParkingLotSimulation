@@ -1,11 +1,9 @@
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ExitGate implements Runnable{
     private String gateId;
     private BlockingQueue<Car> waitingToLeave;
-    private AtomicBoolean isBeingUsed = new AtomicBoolean(false);
     private ParkingLot lot;
 
     public ExitGate(String gateId, BlockingQueue<Car> waitingToLeave, ParkingLot lot){
@@ -15,12 +13,10 @@ public class ExitGate implements Runnable{
     }
 
     public synchronized void passACar(Car car){
-        isBeingUsed.set(true);
         System.out.println("Exit gate "+gateId+" is starting to pass car " +car.getId());
 
         lot.removeACar(car);
 
-        isBeingUsed.set(false);
     }
 
     @Override

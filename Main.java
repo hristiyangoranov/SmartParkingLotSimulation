@@ -6,7 +6,7 @@ public class Main{
         BlockingQueue<Car> waitingToEnter = new ArrayBlockingQueue<>(5);
         BlockingQueue<Car> waitingToLeave = new ArrayBlockingQueue<>(5);
 
-        ParkingLot lot = new ParkingLot(waitingToEnter, waitingToLeave);
+        ParkingLot lot = new ParkingLot();
 
         EntryGate entryGate1 = new EntryGate("1", waitingToEnter, lot);
         EntryGate entryGate2 = new EntryGate("2", waitingToEnter, lot);
@@ -25,10 +25,6 @@ public class Main{
         Thread m1 = new Thread(monitor);
         m1.start();
 
-        Reporter r = new Reporter(lot);
-        Thread r1 = new Thread(r);
-        r1.start();
-
         Car c1 = new Car("1", waitingToEnter, waitingToLeave);
         Car c2 = new Car("2", waitingToEnter, waitingToLeave);
         Car c3 = new Car("3", waitingToEnter, waitingToLeave);
@@ -43,5 +39,9 @@ public class Main{
         t2.start();
         t3.start();
         t4.start();
+
+        Reporter r = new Reporter(lot);
+        Thread r1 = new Thread(r);
+        r1.start();
     }
 }
