@@ -1,26 +1,30 @@
 import java.util.Random;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
 
 public class Car implements Runnable{
     final private String carId;
-    private BlockingQueue<Car> waitingToEnter;
-    private BlockingQueue<Car> waitingToLeave;
     private Semaphore isParked;
+    private Semaphore isReadyToLeave;
     private final Integer maxPark = 7000;
     private final Integer minPark = 2000;
+    private final Boolean isVIP;
 
 
-    public Car(String carId, BlockingQueue<Car> waitingToEnter, BlockingQueue<Car> waitingToLeave){
+    public Car(String carId, boolean isVIP){
         this.carId = carId;
-        this.waitingToEnter = waitingToEnter;
-        this.waitingToLeave = waitingToLeave;
         isParked = new Semaphore(0);
+        isReadyToLeave = new Semaphore(0);
+        this.isVIP = isVIP;
+    }
+
+    public void park(ParkingLot lot){
+        lot.addToWaitingToEnter(this);
+        Thread t = new Thread(this);
+        t.start();
     }
 
     @Override
     public void run(){
-        waitingToEnter.add(this);
         System.out.println("Car "+carId+" just arrived at the queue");
 
         try {
@@ -28,17 +32,24 @@ public class Car implements Runnable{
 
             Random r = new Random();
             Thread.sleep(r.nextInt(maxPark - minPark + 1) + minPark);
+            isReadyToLeave.release();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-
-        waitingToLeave.add(this);
     }
     public Semaphore getisParked(){
         return isParked;
     }
 
+    public Semaphore getIsReadyToLeave(){
+        return isReadyToLeave;
+    }
+
     public String getId(){
         return carId;
+    }
+
+    public Boolean getIsVip(){
+        return isVIP;
     }
 }

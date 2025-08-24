@@ -1,8 +1,8 @@
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,13 +12,17 @@ public class ParkingLot {
     private List<ExitGate> exitGates;
     private ConcurrentHashMap<String, Ticket> tickets;
     private ConcurrentHashMap<Integer, String> takenSpots;
+    private PriorityBlockingQueue<Car> waitingToEnter;
+    private PriorityBlockingQueue<Car> waitingToLeave; 
     private Semaphore s;
     private final Integer maxStay = 3;
     private AtomicInteger currentlyParked = new AtomicInteger(0);
     private AtomicInteger finesIssued = new AtomicInteger(0);
     private AtomicInteger carsServed = new AtomicInteger(0);
+    private Reporter reporter;
+    private OverstayMonitor overstayMonitor;
 
-    public ParkingLot(){
+    public ParkingLot(PriorityBlockingQueue<Car> waitingToEnter, PriorityBlockingQueue<Car> waitingToLeave){
         this.entryGates = new ArrayList<>();
         this.exitGates = new ArrayList<>();
         this.tickets = new ConcurrentHashMap<>();
@@ -27,6 +31,10 @@ public class ParkingLot {
             takenSpots.put(i, "");
         }
         s = new Semaphore(capacity);
+        this.waitingToEnter = waitingToEnter;
+        this.waitingToLeave = waitingToLeave;
+        reporter = new Reporter(this);
+        overstayMonitor = new OverstayMonitor(this);
     }
 
     public void addEntryGate(EntryGate gate){
@@ -38,6 +46,12 @@ public class ParkingLot {
     }
 
     public void open(){
+        if(entryGates.size() == 0){
+            throw new GatesNotSufficientException("There needs to be at least one entry gate");
+        }
+        if(exitGates.size() == 0){
+            throw new GatesNotSufficientException("There needs to be at least one exit gate");
+        }
         for(EntryGate gate : entryGates){
             Thread t = new Thread(gate);
             t.start();
@@ -46,12 +60,18 @@ public class ParkingLot {
             Thread t = new Thread(gate);
             t.start();
         }
+        Thread t1 = new Thread(this.reporter);
+        t1.start();
+
+        Thread t2 = new Thread(overstayMonitor);
+        t2.start();
     }
 
+
     public void parkCar(Car car){
-        currentlyParked.incrementAndGet();
-        carsServed.incrementAndGet();
         synchronized(this){
+            currentlyParked.incrementAndGet();
+            carsServed.incrementAndGet();
             for(Integer i=1;i<=capacity;i++){
                 if(takenSpots.get(i).equals("")){
                     Ticket t = new Ticket(i, LocalTime.now());
@@ -94,5 +114,13 @@ public class ParkingLot {
 
     public Integer getCurrentlyParked(){
         return currentlyParked.get();
+    }
+
+    public void addToWaitingToEnter(Car c){
+        waitingToEnter.add(c);
+    }
+
+    public void addToWaitingToLeave(Car c){
+        waitingToLeave.add(c);
     }
 }

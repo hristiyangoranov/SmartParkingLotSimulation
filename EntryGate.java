@@ -17,7 +17,17 @@ public class EntryGate implements Runnable{
         System.out.println("Entry gate "+gateId+" is starting to pass car " +car.getId());
 
         lot.parkCar(car);
-        car.getisParked().release();
+
+        car.getisParked().release(); //signals that the car is parked
+
+        try {
+            car.getIsReadyToLeave().acquire();
+            lot.addToWaitingToLeave(car);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally{
+            car.getIsReadyToLeave().release();
+        }
     }
 
     @Override

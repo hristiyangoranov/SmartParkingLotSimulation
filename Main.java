@@ -1,12 +1,13 @@
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.Comparator;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public class Main{
     public static void main(String[] args) {
-        BlockingQueue<Car> waitingToEnter = new ArrayBlockingQueue<>(5);
-        BlockingQueue<Car> waitingToLeave = new ArrayBlockingQueue<>(5);
+        Comparator<Car> c = Comparator.comparing(Car::getIsVip).reversed();
+        PriorityBlockingQueue<Car> waitingToEnter = new PriorityBlockingQueue<>(5, c);
+        PriorityBlockingQueue<Car> waitingToLeave = new PriorityBlockingQueue<>(5, c);
 
-        ParkingLot lot = new ParkingLot();
+        ParkingLot lot = new ParkingLot(waitingToEnter, waitingToLeave);
 
         EntryGate entryGate1 = new EntryGate("1", waitingToEnter, lot);
         EntryGate entryGate2 = new EntryGate("2", waitingToEnter, lot);
@@ -19,29 +20,22 @@ public class Main{
         lot.addExitGate(exitGate1);
         lot.addExitGate(exitGate2);
 
-        lot.open();
+        try {
+            lot.open();
+        } catch (GatesNotSufficientException e) {
+            System.out.println(e.getMessage());
+            System.exit(0);
+        }
 
-        OverstayMonitor monitor = new OverstayMonitor(lot);
-        Thread m1 = new Thread(monitor);
-        m1.start();
+        Car c1 = new Car("1", true);
+        Car c2 = new Car("2", false);
+        Car c3 = new Car("3", true);
+        Car c4 = new Car("4", false);
 
-        Car c1 = new Car("1", waitingToEnter, waitingToLeave);
-        Car c2 = new Car("2", waitingToEnter, waitingToLeave);
-        Car c3 = new Car("3", waitingToEnter, waitingToLeave);
-        Car c4 = new Car("4", waitingToEnter, waitingToLeave);
+        c1.park(lot);
+        c2.park(lot);
+        c3.park(lot);
+        c4.park(lot);
 
-        Thread t1 = new Thread(c1);
-        Thread t2 = new Thread(c2);
-        Thread t3 = new Thread(c3);
-        Thread t4 = new Thread(c4);
-
-        t1.start();
-        t2.start();
-        t3.start();
-        t4.start();
-
-        Reporter r = new Reporter(lot);
-        Thread r1 = new Thread(r);
-        r1.start();
     }
 }
